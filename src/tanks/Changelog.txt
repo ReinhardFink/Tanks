@@ -1,0 +1,191 @@
+#################################################################
+V5:
+
+2 Solutions found for waitForPainting - problem!
+both solutions work!
+this.waitForPainting();
+or
+world.waitForPainting();
+possible
+
+	public final void run() {
+		while (isAlive) {
+			work();
+			this.waitForPainting();
+			//world.waitForPainting();
+		}
+	}
+
+	private void waitForPainting() {
+		synchronized(world) { // get Lock on Object world!
+			try {
+				world.wait(); // free Lock on Object world and wait for notifyAll()
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+
+Big Change:
+Visible changes from Thread to Runnable and VisibleObjectFactory manages Threads 
+with ThreadPoolExecutor
+
+In Class Explosion: 
+loading Images changed to static, when class is loaded
+
+In Class Tank:
+	public double getAngel() {
+		return angleList.get(INDEX_TANK);
+	}
+corrected
+
+	public double getTurretAngel() {
+		return angleList.get(INDEX_TURRET) - angleList.get(INDEX_TANK);
+	}
+new created
+
+In Class StateMachineQueen:
+field private double turretAngle replaced with tank.getTurretAngel())
+
+
+#################################################################
+V4:
+
+changed from long to int
+	public static final int SLEEP_MILLISEK = 25;
+	public static final int MIN_SLEEP_MILLISEK = 1;
+	public static final int DELTA_SLEEP_MILLISEK = 1;
+	
+World is no Thread any more!
+worldPanel.repaint() is done with a Swing Timer, witch places worldPanel.repaint()
+in the Swing event queue.
+
+InteractivPlayerList changed to PlayerManager
+keyboard stuff moved from VisibleObjectFactory to PlayerManager
+
+World got it own KeyEventDispatcher
+
+InteractivPlayer.play() works now with if instead while and without bool isKeyEventProzessed
+and improved synchronization.
+synchronized just to get event!
+
+waitForPainting() has to be created in World, because
+
+	public final void run() {
+		while (isAlive) {
+			synchronized(this.world) {	
+				try {
+					wait();  <= mistake here !!! solved in V5
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			work();
+		}
+	}
+did not work in Visible, because of an IllegalMonitorStateException!!
+
+
+#################################################################
+V3:
+
+Threads for every visible Object
+
+=> 			for (VisibleInterface visible : visibleList)
+				visible.play();
+ removed from world.run()
+ 
+Remark:
+newVisiblesList and removeVisiblesList removed, because different threads manipulate
+visibleList and visibleList isn't any more use for play - loop!
+
+run is getting easier now:
+
+public void run() {
+		while (true) {			
+			worldPanel.repaint();
+			try {
+				Thread.sleep(this.getSleepMillis());
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+
+#################################################################
+V2:
+
+2 Queens and 1 QueenTank added for 8 - Queens - Problem
+
+#################################################################
+V1:
+
+maximal 2 Tasks:
+1. Swing - Task
+2. World as own Task, managing:
+-- playing
+-- adding new Visible
+-- removing old Visible
+in 3 different Lists
+
+	public void run() {
+		while (true) {
+			for (Visible visible : visibleList)
+				visible.play();
+
+			visibleList.addAll(newVisiblesList);
+			newVisiblesList.clear();
+
+			for (Visible visible : removeVisiblesList)
+				visibleList.remove(visible);
+			removeVisiblesList.clear();
+
+			worldPanel.repaint();
+			try {
+				Thread.sleep(CONSTANTS.SLEEP_MILLISEK);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+
+
+------------------------------------------------------------------
+Changes from tanksV03:
+
+changed from long to int
+	public static final int SLEEP_MILLISEK = 25;
+	public static final int MIN_SLEEP_MILLISEK = 1;
+	public static final int DELTA_SLEEP_MILLISEK = 1;
+	
+World is no Thread any more!
+worldPanel.repaint() is done with a Swing Timer, witch places worldPanel.repaint()
+in the Swing event queue.
+
+InteractivPlayerList changed to PlayerManager
+keyboard stuff moved from VisibleObjectFactory to PlayerManager
+
+World got it own KeyEventDispatcher
+
+InteractivPlayer.play() works now with if instead while and without bool isKeyEventProzessed
+
+waitForPainting() has to be created in World, because
+
+	public final void run() {
+		while (isAlive) {
+			synchronized(this.world) {	
+				try {
+					wait();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			work();
+		}
+	}
+did not work in Visible, because of an IllegalMonitorStateException!!
